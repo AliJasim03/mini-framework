@@ -1,5 +1,5 @@
 /**
- * Mini-Framework Core
+ * Mini-Framework Core (Improved Version)
  * A lightweight JavaScript framework with DOM abstraction, state management,
  * event handling, and routing functionality.
  */
@@ -7,14 +7,20 @@
 // State management
 let _state = {};
 let _listeners = [];
+let _prevState = {};
 
 /**
  * Update the application state
  * @param {Object} newState - The new state to merge with the existing state
  */
 export function setState(newState) {
+    _prevState = { ..._state };
     _state = { ..._state, ...newState };
-    _listeners.forEach(listener => listener(_state));
+
+    // Compare and only trigger updates if state actually changed
+    if (JSON.stringify(_prevState) !== JSON.stringify(_state)) {
+        _listeners.forEach(listener => listener(_state, _prevState));
+    }
 }
 
 /**
@@ -48,10 +54,13 @@ export function createElement(tag, attrs = {}, children = []) {
     // Ensure children is always an array
     const normalizedChildren = Array.isArray(children) ? children : [children];
 
+    // Clean up children array, filtering out null and undefined
+    const cleanedChildren = normalizedChildren.filter(child => child !== null && child !== undefined);
+
     return {
         tag,
         attrs,
-        children: normalizedChildren,
+        children: cleanedChildren,
         key: attrs.key || null
     };
 }
@@ -62,6 +71,11 @@ export function createElement(tag, attrs = {}, children = []) {
  * @returns {HTMLElement|Text} Real DOM node
  */
 export function render(vNode) {
+    // Handle null or undefined
+    if (vNode === null || vNode === undefined) {
+        return document.createComment('empty node');
+    }
+
     // Handle text nodes
     if (typeof vNode === 'string' || typeof vNode === 'number') {
         return document.createTextNode(vNode);
@@ -72,18 +86,40 @@ export function render(vNode) {
 
     // Set attributes and attach event handlers
     Object.entries(vNode.attrs || {}).forEach(([key, value]) => {
-        if (key === 'key') {
+        if (key === 'key' || value === null || value === undefined) {
             // Skip key attribute, it's only for internal use
+            // Also skip null/undefined values
             return;
         } else if (key === 'style' && typeof value === 'object') {
             // Handle style objects
             Object.entries(value).forEach(([prop, val]) => {
-                element.style[prop] = val;
+                if (val !== null && val !== undefined) {
+                    element.style[prop] = val;
+                }
             });
         } else if (key.startsWith('on') && typeof value === 'function') {
             // Handle event listeners
             const eventName = key.slice(2).toLowerCase();
             element.addEventListener(eventName, value);
+        } else if (key === 'checked' || key === 'disabled' || key === 'selected' || key === 'autofocus') {
+            // Handle boolean attributes
+            if (value) {
+                element.setAttribute(key, key);
+                // Also set property for form elements
+                if (key in element) {
+                    element[key] = true;
+                }
+            }
+        } else if (key === 'value' && ('value' in element)) {
+            // Handle value attribute (special case for form elements)
+            element.value = value;
+        } else if (key === 'class' || key === 'className') {
+            // Handle class attribute
+            element.className = value;
+        } else if (key === 'for') {
+            // Handle htmlFor attribute (label for element)
+            element.htmlFor = value;
+            element.setAttribute('for', value);
         } else {
             // Handle regular attributes
             element.setAttribute(key, value);
@@ -91,8 +127,10 @@ export function render(vNode) {
     });
 
     // Render and append children
-    (vNode.children || []).forEach(child => {
-        element.appendChild(render(child));
+    vNode.children.forEach(child => {
+        if (child !== null && child !== undefined) {
+            element.appendChild(render(child));
+        }
     });
 
     return element;
@@ -123,9 +161,11 @@ export function createApp(component, rootId = 'root') {
 
     // Function to render the app
     const renderApp = () => {
+        console.time('render');
         const vNode = component(getState());
         const realNode = render(vNode);
         mount(realNode, rootElement);
+        console.timeEnd('render');
     };
 
     // Subscribe to state changes to trigger re-renders

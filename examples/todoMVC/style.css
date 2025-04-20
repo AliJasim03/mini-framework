@@ -264,6 +264,7 @@ body.dark {
 
 /* Todo toggle checkbox */
 .todo-list li .toggle {
+    cursor: pointer;
     text-align: center;
     width: 40px;
     height: auto;

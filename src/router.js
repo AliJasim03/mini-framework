@@ -118,7 +118,8 @@ export class Router {
             router: {
                 currentPath: path,
                 params,
-                notFound: !match
+                notFound: !match,
+                component: component(params)
             },
             ...state
         });

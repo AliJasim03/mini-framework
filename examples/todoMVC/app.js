@@ -26,124 +26,25 @@ const unsubscribe = subscribe(state => {
     localStorage.setItem('theme', state.theme);
 });
 
-// Set up routes
-const router = new Router([
-    { path: '/', component: () => TodoApp },
-    { path: '/active', component: () => TodoApp },
-    { path: '/completed', component: () => TodoApp }
-]);
-
-// Helper functions
-function generateId() {
-    return Math.random().toString(36).substr(2, 9);
-}
-
-function addTodo(text) {
-    const trimmedText = text.trim();
-    if (!trimmedText) return;
-
-    const newTodo = {
-        id: generateId(),
-        text: trimmedText,
-        completed: false,
-        createdAt: new Date().toISOString()
-    };
-
-    setState({
-        todos: [...getState().todos, newTodo],
-        animating: true
-    });
-
-    // Remove animating flag after animation completes
-    setTimeout(() => {
-        setState({ animating: false });
-    }, 500);
-}
-
-function toggleTodo(id) {
-    const { todos } = getState();
-    const newTodos = todos.map(todo =>
-        todo.id === id ? { ...todo, completed: !todo.completed } : todo
-    );
-
-    setState({ todos: newTodos });
-}
-
-function updateTodo(id, text) {
-    const { todos } = getState();
-    const newTodos = todos.map(todo =>
-        todo.id === id ? { ...todo, text: text.trim() } : todo
-    );
-
-    setState({
-        todos: newTodos,
-        editing: null
-    });
-}
-
-function removeTodo(id) {
-    const { todos } = getState();
-    setState({
-        todos: todos.filter(todo => todo.id !== id)
-    });
-}
-
-function clearCompleted() {
-    const { todos } = getState();
-    setState({
-        todos: todos.filter(todo => !todo.completed)
-    });
-}
-
-function setFilter(filter) {
-    setState({ filter });
-    const path = filter === 'all' ? '/' : `/${filter}`;
-    router.navigate(path);
-}
-
-function toggleAll(completed) {
-    const { todos } = getState();
-    const newTodos = todos.map(todo => ({ ...todo, completed }));
-    setState({ todos: newTodos });
-}
-
-function startEditing(id) {
-    setState({ editing: id });
-}
-
-function toggleTheme() {
+// Define the Abdeen component
+function Abdeen() {
     const { theme } = getState();
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    setState({ theme: newTheme });
-    document.body.className = newTheme;
+
+    return createElement('div', { class: `abdeen ${theme}` }, [
+        createElement('h1', {}, ['Abdeen Page']),
+        createElement('p', {}, ['This is the Abdeen page!']),
+        // Add a link back to the main app
+        createElement('a', {
+            href: '/',
+            onClick: (e) => {
+                e.preventDefault();
+                router.navigate('/');
+            }
+        }, ['Back to Todo App'])
+    ]);
 }
 
-// Filter todos based on current filter
-function getFilteredTodos() {
-    const { todos, filter } = getState();
-
-    switch (filter) {
-        case 'active':
-            return todos.filter(todo => !todo.completed);
-        case 'completed':
-            return todos.filter(todo => todo.completed);
-        default:
-            return todos;
-    }
-}
-
-// Format date for display
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString(undefined, {
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-}
-
-// TodoApp component
+// TodoApp component - Define before router setup
 function TodoApp() {
     const { todos, filter, editing, theme, animating } = getState();
     const filteredTodos = getFilteredTodos();
@@ -319,6 +220,124 @@ function TodoApp() {
     ]);
 }
 
+// Set up routes - Note the proper component function calls
+const router = new Router([
+    { path: '/', component: () => TodoApp() },
+    { path: '/active', component: () => TodoApp() },
+    { path: '/completed', component: () => TodoApp() },
+    { path: '/abdeen', component: () => Abdeen() },
+]);
+
+// Helper functions
+function generateId() {
+    return Math.random().toString(36).substr(2, 9);
+}
+
+function addTodo(text) {
+    const trimmedText = text.trim();
+    if (!trimmedText) return;
+
+    const newTodo = {
+        id: generateId(),
+        text: trimmedText,
+        completed: false,
+        createdAt: new Date().toISOString()
+    };
+
+    setState({
+        todos: [...getState().todos, newTodo],
+        animating: true
+    });
+
+    // Remove animating flag after animation completes
+    setTimeout(() => {
+        setState({ animating: false });
+    }, 500);
+}
+
+function toggleTodo(id) {
+    const { todos } = getState();
+    const newTodos = todos.map(todo =>
+        todo.id === id ? { ...todo, completed: !todo.completed } : todo
+    );
+
+    setState({ todos: newTodos });
+}
+
+function updateTodo(id, text) {
+    const { todos } = getState();
+    const newTodos = todos.map(todo =>
+        todo.id === id ? { ...todo, text: text.trim() } : todo
+    );
+
+    setState({
+        todos: newTodos,
+        editing: null
+    });
+}
+
+function removeTodo(id) {
+    const { todos } = getState();
+    setState({
+        todos: todos.filter(todo => todo.id !== id)
+    });
+}
+
+function clearCompleted() {
+    const { todos } = getState();
+    setState({
+        todos: todos.filter(todo => !todo.completed)
+    });
+}
+
+function setFilter(filter) {
+    setState({ filter });
+    const path = filter === 'all' ? '/' : `/${filter}`;
+    router.navigate(path);
+}
+
+function toggleAll(completed) {
+    const { todos } = getState();
+    const newTodos = todos.map(todo => ({ ...todo, completed }));
+    setState({ todos: newTodos });
+}
+
+function startEditing(id) {
+    setState({ editing: id });
+}
+
+function toggleTheme() {
+    const { theme } = getState();
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setState({ theme: newTheme });
+    document.body.className = newTheme;
+}
+
+// Filter todos based on current filter
+function getFilteredTodos() {
+    const { todos, filter } = getState();
+
+    switch (filter) {
+        case 'active':
+            return todos.filter(todo => !todo.completed);
+        case 'completed':
+            return todos.filter(todo => todo.completed);
+        default:
+            return todos;
+    }
+}
+
+// Format date for display
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
 // Listen for hash changes
 window.addEventListener('hashchange', () => {
     const filter = window.location.hash.replace('#/', '') || 'all';
@@ -328,5 +347,28 @@ window.addEventListener('hashchange', () => {
 // Apply theme on initial load
 document.body.className = getState().theme;
 
-// Create and mount the app
-const app = createApp(() => TodoApp());
+// Make sure initial routing happens
+router.handleRouteChange(window.location.pathname);
+
+// THE KEY FIX: Create and mount the app with router awareness and root path handling
+const app = createApp(() => {
+    const state = getState();
+
+    // Check if we have router state and a component to render
+    if (state.router && state.router.component) {
+        return state.router.component;
+    }
+
+    // If we still don't have a component but we're on the root path,
+    // explicitly render TodoApp
+    if (window.location.pathname === '/') {
+        return TodoApp();
+    }
+
+    // For any other path without a component, show not found
+    return {
+        tag: 'div',
+        attrs: { class: 'not-found' },
+        children: ['Page not found']
+    };
+});
